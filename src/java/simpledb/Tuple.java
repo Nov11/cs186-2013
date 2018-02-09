@@ -1,8 +1,10 @@
 package simpledb;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Tuple maintains information about the contents of a tuple. Tuples have a
@@ -12,16 +14,20 @@ import java.util.Iterator;
 public class Tuple implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
+    private TupleDesc tupleDesc;
+    private RecordId recordId;
+    private List<Field> list = new ArrayList<>();
     /**
      * Create a new tuple with the specified schema (type).
-     * 
+     *
      * @param td
      *            the schema of this tuple. It must be a valid TupleDesc
      *            instance with at least one field.
      */
     public Tuple(TupleDesc td) {
         // some code goes here
+        assert td != null && td.numFields() >= 1;
+        tupleDesc = td;
     }
 
     /**
@@ -29,7 +35,7 @@ public class Tuple implements Serializable {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        return tupleDesc;
     }
 
     /**
@@ -38,7 +44,7 @@ public class Tuple implements Serializable {
      */
     public RecordId getRecordId() {
         // some code goes here
-        return null;
+        return recordId;
     }
 
     /**
@@ -49,6 +55,7 @@ public class Tuple implements Serializable {
      */
     public void setRecordId(RecordId rid) {
         // some code goes here
+        recordId = rid;
     }
 
     /**
@@ -61,6 +68,11 @@ public class Tuple implements Serializable {
      */
     public void setField(int i, Field f) {
         // some code goes here
+        if (list.size() == i) {
+            list.add(f);
+        }else{
+            list.set(i, f);
+        }
     }
 
     /**
@@ -71,7 +83,7 @@ public class Tuple implements Serializable {
      */
     public Field getField(int i) {
         // some code goes here
-        return null;
+        return list.get(i);
     }
 
     /**
@@ -84,7 +96,17 @@ public class Tuple implements Serializable {
      */
     public String toString() {
         // some code goes here
-        throw new UnsupportedOperationException("Implement this");
+//        throw new UnsupportedOperationException("Implement this");
+        StringBuilder builder = new StringBuilder();
+        Iterator<Field> iterator = fields();
+        while (iterator.hasNext()) {
+            Field f = iterator.next();
+            builder.append(f.toString()).append(" ");
+        }
+        if(builder.length() > 1){
+            builder.setCharAt(builder.length() - 1, '\n');
+        }
+        return builder.toString();
     }
     
     /**
@@ -94,6 +116,6 @@ public class Tuple implements Serializable {
     public Iterator<Field> fields()
     {
         // some code goes here
-        return null;
+        return list.iterator();
     }
 }
