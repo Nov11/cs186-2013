@@ -14,11 +14,9 @@ public class RecordId implements Serializable {
     /**
      * Creates a new RecordId referring to the specified PageId and tuple
      * number.
-     * 
-     * @param pid
-     *            the pageid of the page on which the tuple resides
-     * @param tupleno
-     *            the tuple number within the page.
+     *
+     * @param pid     the pageid of the page on which the tuple resides
+     * @param tupleno the tuple number within the page.
      */
     public RecordId(PageId pid, int tupleno) {
         // some code goes here
@@ -45,24 +43,24 @@ public class RecordId implements Serializable {
     /**
      * Two RecordId objects are considered equal if they represent the same
      * tuple.
-     * 
+     *
      * @return True if this and o represent the same tuple
      */
     @Override
     public boolean equals(Object o) {
         // some code goes here
 //        throw new UnsupportedOperationException("implement this");
-        if(!(o instanceof RecordId)){
+        if (!(o instanceof RecordId)) {
             return false;
         }
-        RecordId other = (RecordId)o;
-        if(other.tupleNumber != tupleNumber){
+        RecordId other = (RecordId) o;
+        if (other.tupleNumber != tupleNumber) {
             return false;
         }
         if (other.pageId == null && pageId == null) {
             return true;
         }
-        if(other.pageId == null || pageId == null   ){
+        if (other.pageId == null || pageId == null) {
             return false;
         }
         return other.pageId.equals(pageId);
@@ -71,7 +69,7 @@ public class RecordId implements Serializable {
     /**
      * You should implement the hashCode() so that two equal RecordId instances
      * (with respect to equals()) have the same hashCode().
-     * 
+     *
      * @return An int that is the same for equal RecordId objects.
      */
     @Override
