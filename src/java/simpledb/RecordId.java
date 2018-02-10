@@ -7,7 +7,8 @@ import java.io.Serializable;
  * specific table.
  */
 public class RecordId implements Serializable {
-
+    private PageId pageId;
+    private int tupleNumber;
     private static final long serialVersionUID = 1L;
 
     /**
@@ -21,6 +22,8 @@ public class RecordId implements Serializable {
      */
     public RecordId(PageId pid, int tupleno) {
         // some code goes here
+        pageId = pid;
+        tupleNumber = tupleno;
     }
 
     /**
@@ -28,7 +31,7 @@ public class RecordId implements Serializable {
      */
     public int tupleno() {
         // some code goes here
-        return 0;
+        return tupleNumber;
     }
 
     /**
@@ -36,7 +39,7 @@ public class RecordId implements Serializable {
      */
     public PageId getPageId() {
         // some code goes here
-        return null;
+        return pageId;
     }
 
     /**
@@ -48,7 +51,21 @@ public class RecordId implements Serializable {
     @Override
     public boolean equals(Object o) {
         // some code goes here
-        throw new UnsupportedOperationException("implement this");
+//        throw new UnsupportedOperationException("implement this");
+        if(!(o instanceof RecordId)){
+            return false;
+        }
+        RecordId other = (RecordId)o;
+        if(other.tupleNumber != tupleNumber){
+            return false;
+        }
+        if (other.pageId == null && pageId == null) {
+            return true;
+        }
+        if(other.pageId == null || pageId == null   ){
+            return false;
+        }
+        return other.pageId.equals(pageId);
     }
 
     /**
@@ -60,8 +77,11 @@ public class RecordId implements Serializable {
     @Override
     public int hashCode() {
         // some code goes here
-        throw new UnsupportedOperationException("implement this");
-
+//        throw new UnsupportedOperationException("implement this");
+        Long tmp = Integer.toUnsignedLong(tupleNumber);
+        tmp <<= 32;
+        tmp += pageId.hashCode();
+        return tmp.hashCode();
     }
 
 }
