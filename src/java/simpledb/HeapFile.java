@@ -185,7 +185,8 @@ public class HeapFile implements DbFile {
 
         @Override
         public void rewind() throws DbException, TransactionAbortedException {
-
+            close();
+            open();
         }
 
         @Override
