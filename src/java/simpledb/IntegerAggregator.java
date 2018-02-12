@@ -10,8 +10,8 @@ public class IntegerAggregator implements Aggregator {
     private static final long serialVersionUID = 1L;
     private int groupingField;
     private Type groupingFieldType;
-    private int fieldId;
-    private Op operaion;
+    private int aggregateFieldId;
+    private Op operand;
     private Map<Field, List<Integer>> hash;
 
     /**
@@ -29,8 +29,8 @@ public class IntegerAggregator implements Aggregator {
         // some code goes here
         this.groupingField = gbfield;
         this.groupingFieldType = gbfieldtype;
-        this.fieldId = afield;
-        this.operaion = what;
+        this.aggregateFieldId = afield;
+        this.operand = what;
         hash = new HashMap<>();
     }
 
@@ -49,8 +49,8 @@ public class IntegerAggregator implements Aggregator {
             Field field = tup.getField(groupingField);
             value = hash.computeIfAbsent(field, k-> new ArrayList<>());
         }
-        assert tup.getField(fieldId) instanceof IntField;
-        IntField afield = (IntField) tup.getField(fieldId);
+        assert tup.getField(aggregateFieldId) instanceof IntField;
+        IntField afield = (IntField) tup.getField(aggregateFieldId);
         value.add(afield.getValue());
     }
 
@@ -150,7 +150,7 @@ public class IntegerAggregator implements Aggregator {
             }
             Map.Entry<Field, List<Integer>> entry = iterator.next();
             Tuple result = new Tuple(desc);
-            Integer ret = compute(integerAggregator.operaion, entry.getValue());
+            Integer ret = compute(integerAggregator.operand, entry.getValue());
             if (integerAggregator.groupingField == NO_GROUPING) {
                 result.setField(0, new IntField(ret));
             } else {
