@@ -11,7 +11,7 @@ public class StringAggregator implements Aggregator {
     private int groupFieldId;
     private Type groupFieldType;
     private int aggregateFieldId;
-    private Op operand;
+    private Op operation;
     private Map<Field, List<String>> hash;
 
     /**
@@ -29,7 +29,7 @@ public class StringAggregator implements Aggregator {
         this.groupFieldId = gbfield;
         this.groupFieldType = gbfieldtype;
         this.aggregateFieldId = afield;
-        this.operand = what;
+        this.operation = what;
         assert what == Op.COUNT;
         hash = new HashMap<>();
     }
@@ -63,9 +63,9 @@ public class StringAggregator implements Aggregator {
         // some code goes here
 //        throw new UnsupportedOperationException("please implement me for proj2");
         TupleDesc tupleDesc = null;
-        if(groupFieldId == NO_GROUPING){
+        if (groupFieldId == NO_GROUPING) {
             tupleDesc = new TupleDesc(new Type[]{Type.INT_TYPE});
-        }else{
+        } else {
             tupleDesc = new TupleDesc(new Type[]{groupFieldType, Type.INT_TYPE});
         }
         return new StringAggregaterIter(this, tupleDesc);
@@ -90,6 +90,8 @@ public class StringAggregator implements Aggregator {
 
         @Override
         public boolean hasNext() throws DbException, TransactionAbortedException {
+            if (!this.open)
+                throw new IllegalStateException("Operator not yet open");
             return iterator.hasNext();
         }
 
@@ -105,7 +107,7 @@ public class StringAggregator implements Aggregator {
             if (stringAggregator.groupFieldId != NO_GROUPING) {
                 result.setField(0, field);
                 result.setField(1, new IntField(list.size()));
-            }else{
+            } else {
                 result.setField(0, new IntField(list.size()));
             }
             return result;

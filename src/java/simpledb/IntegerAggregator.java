@@ -11,7 +11,7 @@ public class IntegerAggregator implements Aggregator {
     private int groupingField;
     private Type groupingFieldType;
     private int aggregateFieldId;
-    private Op operand;
+    private Op operation;
     private Map<Field, List<Integer>> hash;
 
     /**
@@ -30,7 +30,7 @@ public class IntegerAggregator implements Aggregator {
         this.groupingField = gbfield;
         this.groupingFieldType = gbfieldtype;
         this.aggregateFieldId = afield;
-        this.operand = what;
+        this.operation = what;
         hash = new HashMap<>();
     }
 
@@ -47,7 +47,7 @@ public class IntegerAggregator implements Aggregator {
             value = hash.computeIfAbsent(null, k -> new ArrayList<>());
         } else {
             Field field = tup.getField(groupingField);
-            value = hash.computeIfAbsent(field, k-> new ArrayList<>());
+            value = hash.computeIfAbsent(field, k -> new ArrayList<>());
         }
         assert tup.getField(aggregateFieldId) instanceof IntField;
         IntField afield = (IntField) tup.getField(aggregateFieldId);
@@ -95,6 +95,8 @@ public class IntegerAggregator implements Aggregator {
 
         @Override
         public boolean hasNext() throws DbException, TransactionAbortedException {
+            if (!this.open)
+                throw new IllegalStateException("Operator not yet open");
             return iterator.hasNext();
         }
 
@@ -150,7 +152,7 @@ public class IntegerAggregator implements Aggregator {
             }
             Map.Entry<Field, List<Integer>> entry = iterator.next();
             Tuple result = new Tuple(desc);
-            Integer ret = compute(integerAggregator.operand, entry.getValue());
+            Integer ret = compute(integerAggregator.operation, entry.getValue());
             if (integerAggregator.groupingField == NO_GROUPING) {
                 result.setField(0, new IntField(ret));
             } else {
