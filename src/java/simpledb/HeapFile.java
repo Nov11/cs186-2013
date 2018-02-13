@@ -1,5 +1,6 @@
 package simpledb;
 
+import javax.xml.crypto.Data;
 import java.io.*;
 import java.util.*;
 
@@ -95,7 +96,7 @@ public class HeapFile implements DbFile {
         // some code goes here
         // not necessary for proj1
         int num = page.getId().pageNumber();
-        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "w");
+        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
         randomAccessFile.seek(num * BufferPool.PAGE_SIZE);
         randomAccessFile.write(page.getPageData());
         randomAccessFile.close();
@@ -114,16 +115,41 @@ public class HeapFile implements DbFile {
     public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        return null;
         // not necessary for proj1
+        BufferPool bufferPool = Database.getBufferPool();
+        HeapPage heapPage = null;
+        for(int i = 0; i < numPages(); i++){
+            HeapPageId heapPageId = new HeapPageId(getId(), i);
+            Page page = bufferPool.getPage(tid, heapPageId, Permissions.READ_ONLY);
+            assert page != null;
+            assert page instanceof HeapPage;
+            HeapPage hp = (HeapPage)page;
+            if(hp.getNumEmptySlots() > 0){
+                heapPage = hp;
+                break;
+            }
+        }
+        if(heapPage == null){
+            HeapPageId heapPageId = new HeapPageId(getId(), numPages());
+            heapPage = new HeapPage(heapPageId, HeapPage.createEmptyPageData());
+            this.writePage(heapPage);
+            heapPage = (HeapPage) bufferPool.getPage(tid, heapPageId, Permissions.READ_ONLY);
+        }
+        heapPage.insertTuple(t);
+        ArrayList<Page> result = new ArrayList<>();
+        result.add(heapPage);
+        return result;
     }
 
     // see DbFile.java for javadocs
     public Page deleteTuple(TransactionId tid, Tuple t) throws DbException,
             TransactionAbortedException {
         // some code goes here
-        return null;
         // not necessary for proj1
+        BufferPool bufferPool = Database.getBufferPool();
+        HeapPage heapPage = (HeapPage) bufferPool.getPage(tid, t.getRecordId().getPageId(), Permissions.READ_WRITE);
+        heapPage.deleteTuple(t);
+        return heapPage;
     }
 
     // see DbFile.java for javadocs

@@ -274,8 +274,10 @@ public class HeapPage implements Page {
                 tuples[i] = t;
                 RecordId rid = new RecordId(getId(), i);
                 t.setRecordId(rid);
+                return;
             }
         }
+        throw new DbException("tuple cannot be inserted");
     }
 
     /**
@@ -286,7 +288,11 @@ public class HeapPage implements Page {
         // some code goes here
         // not necessary for lab1
         this.dirty = dirty;
-        txn.add(tid);
+        if (dirty) {
+            txn.add(tid);
+        } else {
+            txn.remove(tid);
+        }
     }
 
     /**
