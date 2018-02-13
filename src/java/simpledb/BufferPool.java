@@ -3,6 +3,7 @@ package simpledb;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,8 +16,9 @@ import java.util.Map;
  * locks to read/write the page.
  */
 public class BufferPool {
-    private int numberOfPages = 0;
+    private int numberOfPages;
     private Map<PageId, Page> hash;
+    private LRUCache<PageId> lru;
     /**
      * Bytes per page, including header.
      */
@@ -38,6 +40,7 @@ public class BufferPool {
         // some code goes here
         numberOfPages = numPages;
         hash = new HashMap<>(numberOfPages);
+        lru = new LRUCache<>();
     }
 
     /**
@@ -60,15 +63,17 @@ public class BufferPool {
         // some code goes here
         Page page = hash.get(pid);
         if (page != null) {
+            lru.get(pid);
             return page;
         }
         if (hash.size() == numberOfPages) {
-            throw new DbException("buffer pool is full and eviction policy is not implemented yet");
+            evictPage();
         }
         Catalog catalog = Database.getCatalog();
         DbFile dbFile = catalog.getDbFile(pid.getTableId());
         page = dbFile.readPage(pid);
         hash.put(pid, page);
+        lru.put(pid);
         return page;
     }
 
@@ -141,7 +146,7 @@ public class BufferPool {
         ArrayList<Page> ret = heapFile.insertTuple(tid, t);
         for (Page page : ret) {
             page.markDirty(true, tid);
-            hash.put(page.getId(), page);
+//            hash.put(page.getId(), page);
         }
     }
 
@@ -175,7 +180,9 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for proj1
-
+        for (PageId pageId : hash.keySet()) {
+            flushPage(pageId);
+        }
     }
 
     /**
@@ -197,6 +204,12 @@ public class BufferPool {
     private synchronized void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for proj1
+        Page page = hash.get(pid);
+        assert page != null;
+        int tableId = page.getId().getTableId();
+        HeapFile heapFile = (HeapFile) Database.getCatalog().getDbFile(tableId);
+        heapFile.writePage(page);
+        page.markDirty(false, null);
     }
 
     /**
@@ -214,6 +227,86 @@ public class BufferPool {
     private synchronized void evictPage() throws DbException {
         // some code goes here
         // not necessary for proj1
+        PageId pageId = lru.evict();
+        assert pageId != null;
+        try {
+            flushPage(pageId);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new DbException("cannot flush dirty page when evicting from buffer pool!");
+        }
+        hash.remove(pageId);
     }
 
+    static class LRUCache<K> {
+        static class Node<K> {
+            Node next;
+            Node prev;
+            K key;
+
+            Node(K k) {
+                key = k;
+            }
+        }
+
+        Map<K, Node> hash = new HashMap<>();
+        Node head;
+
+        LRUCache() {
+            head = new Node(-1);
+            head.next = head;
+            head.prev = head;
+        }
+
+        K evict() {
+            Node n = last();
+            if (n == null) {
+                return null;
+            }
+            K ret = (K) n.key;
+            remove(head.prev);
+            hash.remove(ret);
+            return ret;
+        }
+
+        void get(K key) {
+            Node n = hash.get(key);
+            if (n == null) {
+                return;
+            }
+            remove(n);
+            addAfter(head, n);
+        }
+
+        void put(K key) {
+            Node n = hash.get(key);
+            if (n == null) {
+                n = new Node(key);
+                hash.put(key, n);
+                addAfter(head, n);
+            } else {
+                get(key);
+            }
+        }
+
+        void remove(Node n) {
+            assert n != head;
+            n.prev.next = n.next;
+            n.next.prev = n.prev;
+        }
+
+        void addAfter(Node previous, Node n) {
+            n.prev = previous;
+            n.next = previous.next;
+            previous.next.prev = n;
+            previous.next = n;
+        }
+
+        Node last() {
+            if (head.prev == head) {
+                return null;
+            }
+            return head.prev;
+        }
+    }
 }

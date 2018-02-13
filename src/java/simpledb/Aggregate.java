@@ -22,7 +22,7 @@ public class Aggregate extends Operator {
      * Constructor.
      * <p>
      * Implementation hint: depending on the type of afield, you will want to
-     * construct an {@link IntAggregator} or {@link StringAggregator} to help
+     * construct an {@link IntegerAggregator} or {@link StringAggregator} to help
      * you with your implementation of readNext().
      *
      * @param child  The DbIterator that is feeding us tuples.
@@ -97,14 +97,17 @@ public class Aggregate extends Operator {
         super.open();
         TupleDesc inputDesc = child.getTupleDesc();
         Type aggregateType = inputDesc.getFieldType(aggregateFieldId);
-        Aggregator aggregator = null;
+        Aggregator aggregator;
         if (aggregateType == Type.INT_TYPE) {
-            aggregator = new IntegerAggregator(groupingFieldId, inputDesc.getFieldType(groupingFieldId), aggregateFieldId, operation);
+            aggregator = new IntegerAggregator(groupingFieldId,
+                    groupingFieldId == NO_GROUPING ? null : inputDesc.getFieldType(groupingFieldId), aggregateFieldId, operation);
         } else if (aggregateType == Type.STRING_TYPE) {
-            aggregator = new StringAggregator(groupingFieldId, inputDesc.getFieldType(groupingFieldId), aggregateFieldId, operation);
+            aggregator = new StringAggregator(groupingFieldId,
+                    groupingFieldId == NO_GROUPING ? null : inputDesc.getFieldType(groupingFieldId), aggregateFieldId, operation);
         } else {
             throw new DbException("not supported yet");
         }
+        child.open();
         while (child.hasNext()) {
             Tuple tuple = child.next();
             aggregator.mergeTupleIntoGroup(tuple);
@@ -146,7 +149,7 @@ public class Aggregate extends Operator {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        TupleDesc result = null;
+        TupleDesc result;
         if (groupingFieldId == NO_GROUPING) {
             result = new TupleDesc(new Type[]{Type.INT_TYPE});
         } else {

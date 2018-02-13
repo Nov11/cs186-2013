@@ -12,7 +12,7 @@ public class Insert extends Operator {
     private TransactionId tid;
     private DbIterator child;
     private int tableId;
-
+    private boolean fetched = false;
     /**
      * Constructor.
      * 
@@ -75,7 +75,7 @@ public class Insert extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if(!child.hasNext()){
+        if(fetched){
             return null;
         }
         BufferPool bufferPool = Database.getBufferPool();
@@ -92,6 +92,7 @@ public class Insert extends Operator {
         }
         Tuple result = new Tuple(getTupleDesc());
         result.setField(0, new IntField(count));
+        fetched = true;
         return result;
     }
 

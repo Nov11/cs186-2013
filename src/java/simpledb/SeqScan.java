@@ -100,7 +100,7 @@ public class SeqScan implements DbIterator {
         Catalog catalog = Database.getCatalog();
         DbFile dbFile = catalog.getDbFile(tableId);
         TupleDesc tupleDesc = dbFile.getTupleDesc();
-        Type[] typeAr = new Type[tupleDesc.getSize()];
+        Type[] typeAr = new Type[tupleDesc.numFields()];
         String[] fieldAr = new String [tupleDesc.getSize()];
         Iterator<TupleDesc.TDItem> itemIterator = tupleDesc.iterator();
         int idx = 0;
