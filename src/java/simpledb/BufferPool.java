@@ -162,7 +162,7 @@ public class BufferPool {
             throws DbException, TransactionAbortedException {
         // some code goes here
         // not necessary for proj1
-        HeapFile heapFile = (HeapFile) getPage(tid, t.getRecordId().getPageId(), Permissions.READ_WRITE);
+        HeapFile heapFile = (HeapFile) Database.getCatalog().getDbFile(t.getRecordId().getPageId().getTableId());
         Page ret = heapFile.deleteTuple(tid, t);
         ret.markDirty(true, tid);
     }
