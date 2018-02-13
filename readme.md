@@ -9,4 +9,11 @@ project 1:
 [x] Catalog
 [x] BufferPool
 [x] HeapFile access method
-[] Operators
+[x] Operators
+
+project 2:
+[x] Filter and Join
+[x] Aggregates
+[x] HeapFile Mutability
+[x] Insertion and deletion
+[x] Page eviction
