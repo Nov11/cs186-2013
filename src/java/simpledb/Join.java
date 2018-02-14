@@ -12,6 +12,7 @@ public class Join extends Operator {
     private DbIterator child1;
     private DbIterator child2;
     private Tuple outer;
+    private List<Tuple> materialized;
 
     /**
      * Constructor. Accepts to children to join and the predicate to join them
@@ -88,6 +89,7 @@ public class Join extends Operator {
         child1.rewind();
         child2.rewind();
         outer = null;
+        materialized = null;
     }
 
     /**
@@ -110,6 +112,16 @@ public class Join extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
+        if (joinPredicate.getOperator() == Predicate.Op.EQUALS) {
+            eqHashJoin();
+            if (materialized.isEmpty()) {
+                return null;
+            }
+            Tuple result = materialized.get(0);
+            materialized.remove(0);
+            return result;
+        }
+
         if (outer == null) {
             if (!child1.hasNext()) {
                 return null;
@@ -120,28 +132,78 @@ public class Join extends Operator {
             while (child2.hasNext()) {
                 Tuple tuple2 = child2.next();
                 if (joinPredicate.filter(outer, tuple2)) {
-                    Tuple result = new Tuple(getTupleDesc());
-                    Iterator<Field> ii = outer.fields();
-                    int idx = 0;
-                    while (ii.hasNext()) {
-                        result.setField(idx++, ii.next());
-                    }
-                    ii = tuple2.fields();
-                    while (ii.hasNext()) {
-                        result.setField(idx++, ii.next());
-                    }
-                    return result;
+//                    Tuple result = new Tuple(getTupleDesc());
+//                    Iterator<Field> ii = outer.fields();
+//                    int idx = 0;
+//                    while (ii.hasNext()) {
+//                        result.setField(idx++, ii.next());
+//                    }
+//                    ii = tuple2.fields();
+//                    while (ii.hasNext()) {
+//                        result.setField(idx++, ii.next());
+//                    }
+//                    return result;
+                    return combine(outer, tuple2);
                 }
             }
 
             child2.rewind();
-            if(child1.hasNext()){
+            if (child1.hasNext()) {
                 outer = child1.next();
-            }else {
+            } else {
                 outer = null;
             }
         }
         return null;
+    }
+
+    private Tuple combine(Tuple outer, Tuple tuple2) {
+        Tuple result = new Tuple(getTupleDesc());
+        Iterator<Field> ii = outer.fields();
+        int idx = 0;
+        while (ii.hasNext()) {
+            result.setField(idx++, ii.next());
+        }
+        ii = tuple2.fields();
+        while (ii.hasNext()) {
+            result.setField(idx++, ii.next());
+        }
+        return result;
+    }
+
+    private Map<Field, List<Tuple>> splitOnField(DbIterator child, int fieldId) throws DbException, TransactionAbortedException {
+        Map<Field, List<Tuple>> result = new HashMap<>();
+        while (child.hasNext()) {
+            Tuple tuple = child.next();
+            Field f = tuple.getField(fieldId);
+            List<Tuple> list = result.computeIfAbsent(f, k -> new ArrayList<>());
+            list.add(tuple);
+        }
+        return result;
+    }
+
+    private void eqHashJoin() throws TransactionAbortedException, DbException {
+        if (materialized != null) {
+            return;
+        }
+        materialized = new ArrayList<>();
+        Map<Field, List<Tuple>> left = splitOnField(child1, joinPredicate.getField1());
+        Map<Field, List<Tuple>> right = splitOnField(child2, joinPredicate.getField2());
+
+        for (Map.Entry<Field, List<Tuple>> item : left.entrySet()) {
+            Field matchOnThis = item.getKey();
+            List<Tuple> list = item.getValue();
+            List<Tuple> rightMatch = right.get(matchOnThis);
+            if (rightMatch == null) {
+                continue;
+            }
+            for (Tuple outer : list) {
+                for (Tuple inner : rightMatch) {
+                    Tuple ret = combine(outer, inner);
+                    materialized.add(ret);
+                }
+            }
+        }
     }
 
     @Override

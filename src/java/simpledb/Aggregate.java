@@ -150,10 +150,12 @@ public class Aggregate extends Operator {
     public TupleDesc getTupleDesc() {
         // some code goes here
         TupleDesc result;
+        String columnName = "aggName(" + operation.toString() + ")(" + child.getTupleDesc().getFieldName(aggregateFieldId) + ")";
         if (groupingFieldId == NO_GROUPING) {
-            result = new TupleDesc(new Type[]{Type.INT_TYPE});
+            result = new TupleDesc(new Type[]{Type.INT_TYPE}, new String[]{columnName});
         } else {
-            result = new TupleDesc(new Type[]{child.getTupleDesc().getFieldType(groupingFieldId), Type.INT_TYPE});
+            result = new TupleDesc(new Type[]{child.getTupleDesc().getFieldType(groupingFieldId), Type.INT_TYPE}
+                    , new String[]{child.getTupleDesc().getFieldName(groupingFieldId), columnName});
         }
         return result;
     }
