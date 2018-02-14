@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="simpledb" default="dist" basedir=".">
+<project name="simpledb" default="dist">
     <property name="src" location="src"/>
     <property name="testd" location="test"/>
 
@@ -24,17 +24,14 @@
         <pathelement location="${lib}/mina-core-2.0.4.jar"/>
         <pathelement location="${lib}/mina-filter-compression-2.0.4.jar"/>
         <pathelement location="${lib}/slf4j-api-1.6.1.jar"/>
-        <pathelement location="${lib}/slf4j-log4j12-1.6.1.jar"/>
-        <pathelement location="${lib}/log4j-1.2.17.jar"/>
-        <pathelement location="${lib}/jzlib-1.0.7.jar"/>
     </path>
 
     <path id="classpath.test">
         <path refid="classpath.base"/>
         <pathelement location="${build.test}"/>
         <pathelement location="${lib}/junit-4.5.jar"/>
-        <pathelement location="${lib}/javassist-3.16.1-GA.jar"/>
     </path>
+
     <!-- Common macro for compiling Java source -->
     <macrodef name="Compile">
         <attribute name="srcdir"/>
@@ -45,7 +42,7 @@
             <!-- avoids needing ant clean when changing interfaces -->
             <depend srcdir="${srcdir}" destdir="${destdir}" cache="${depcache}"/>
             <javac srcdir="@{srcdir}" destdir="@{destdir}" includeAntRuntime="no"
-                   debug="${compile.debug}" source="${sourceversion}">
+                    debug="${compile.debug}" source="${sourceversion}">
                 <compilerarg value="-Xlint:unchecked" />
                 <!--<compilerarg value="-Xlint:deprecation" />-->
                 <compileoptions/>
@@ -59,7 +56,7 @@
         <element name="testspecification" implicit="yes" />
         <sequential>
             <!-- timeout at 10.5 minutes, since TransactionTest is limited to 10 minutes. -->
-            <junit printsummary="on" fork="yes" timeout="630000" haltonfailure="@{haltonfailure}" maxmemory="256M" failureproperty="junit.failed">
+            <junit printsummary="on" fork="yes" timeout="630000" haltonfailure="@{haltonfailure}" maxmemory="128M" failureproperty="junit.failed">
                 <classpath refid="classpath.test" />
                 <formatter type="plain" usefile="false"/>
                 <assertions><enable/></assertions>
@@ -67,113 +64,50 @@
             </junit>
         </sequential>
     </macrodef>
-
-    <taskdef resource="net/sf/antcontrib/antlib.xml">
-        <classpath>
-            <pathelement location="lib/ant-contrib-1.0b3.jar"/>
-        </classpath>
-    </taskdef>
-
     <target name="eclipse" description="Make current directory an eclipse
     project">
         <echo file=".project" append="false">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-            &lt;projectDescription&gt;
-            &lt;name&gt;simpledb&lt;/name&gt;
-            &lt;comment&gt;&lt;/comment&gt;
-            &lt;projects&gt;
-            &lt;/projects&gt;
-            &lt;buildSpec&gt;
-            &lt;buildCommand&gt;
-            &lt;name&gt;org.eclipse.jdt.core.javabuilder&lt;/name&gt;
-            &lt;arguments&gt;
-            &lt;/arguments&gt;
-            &lt;/buildCommand&gt;
-            &lt;/buildSpec&gt;
-            &lt;natures&gt;
-            &lt;nature&gt;org.eclipse.jdt.core.javanature&lt;/nature&gt;
-            &lt;/natures&gt;
-            &lt;/projectDescription&gt;</echo>
+&lt;projectDescription&gt;
+	&lt;name&gt;simpledb&lt;/name&gt;
+	&lt;comment&gt;&lt;/comment&gt;
+	&lt;projects&gt;
+	&lt;/projects&gt;
+	&lt;buildSpec&gt;
+		&lt;buildCommand&gt;
+			&lt;name&gt;org.eclipse.jdt.core.javabuilder&lt;/name&gt;
+			&lt;arguments&gt;
+			&lt;/arguments&gt;
+		&lt;/buildCommand&gt;
+	&lt;/buildSpec&gt;
+	&lt;natures&gt;
+		&lt;nature&gt;org.eclipse.jdt.core.javanature&lt;/nature&gt;
+	&lt;/natures&gt;
+&lt;/projectDescription&gt;</echo>
         <echo file=".classpath" append="false">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-            &lt;classpath&gt;
-            &lt;classpathentry kind=&quot;src&quot; output=&quot;bin/src&quot; path=&quot;src/java&quot;/&gt;
-            &lt;classpathentry kind=&quot;src&quot; output=&quot;bin/test&quot; path=&quot;test&quot;/&gt;
-            &lt;classpathentry kind=&quot;con&quot; path=&quot;org.eclipse.jdt.launching.JRE_CONTAINER&quot;/&gt;
-            &lt;classpathentry kind=&quot;output&quot; path=&quot;bin/src&quot;/&gt;
-        </echo>
-        <if> <available file="${lib}/junit-4.5.jar" /> <then>
-            <echo file=".classpath" append="true">
-                &lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/junit-4.5.jar&quot;/&gt;
-            </echo>
-        </then>
-        </if>
-        <if> <available file="${lib}/jline-0.9.94.jar" /> <then>
-            <echo file=".classpath" append="true">
-                &lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/jline-0.9.94.jar&quot;/&gt;
-            </echo>
-        </then>
-        </if>
-        <if> <available file="${lib}/zql.jar" /> <then>
-            <echo file=".classpath" append="true">
-                &lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/zql.jar&quot;/&gt;
-            </echo>
-        </then>
-        </if>
-        <if> <available file="${lib}/mina-core-2.0.4.jar" />    <then>
-            <echo file=".classpath" append="true">
-                &lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/mina-core-2.0.4.jar&quot;/&gt;
-            </echo>
-        </then>
-        </if>
-        <if> <available file="${lib}/mina-filter-compression-2.0.4.jar" /> <then>
-            <echo file=".classpath" append="true">
-                &lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/mina-filter-compression-2.0.4.jar&quot;/&gt;
-            </echo>
-        </then>
-        </if>
-        <if> <available file="${lib}/jzlib-1.0.7.jar" /> <then>
-            <echo file=".classpath" append="true">
-                &lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/jzlib-1.0.7.jar&quot;/&gt;
-            </echo>
-        </then>
-        </if>
-        <if> <available file="${lib}/slf4j-api-1.6.1.jar" /> <then>
-            <echo file=".classpath" append="true">
-                &lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/slf4j-api-1.6.1.jar&quot;/&gt;
-            </echo>
-        </then>
-        </if>
-        <if> <available file="${lib}/slf4j-log4j12-1.6.1.jar" /> <then>
-            <echo file=".classpath" append="true">
-                &lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/slf4j-log4j12-1.6.1.jar&quot;/&gt;
-            </echo>
-        </then>
-        </if>
-        <if> <available file="${lib}/log4j-1.2.17.jar" /> <then>
-            <echo file=".classpath" append="true">
-                &lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/log4j-1.2.17.jar&quot;/&gt;
-            </echo>
-        </then>
-        </if>
-        <if> <available file="${lib}/javassist-3.16.1-GA.jar" /> <then>
-            <echo file=".classpath" append="true">
-                &lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/javassist-3.16.1-GA.jar&quot;/&gt;
-            </echo>
-        </then>
-        </if>
-        <echo file=".classpath" append="true">
-            &lt;/classpath&gt;
-        </echo>
+&lt;classpath&gt;
+	&lt;classpathentry kind=&quot;src&quot; output=&quot;bin/src&quot; path=&quot;src/java&quot;/&gt;
+	&lt;classpathentry kind=&quot;src&quot; output=&quot;bin/test&quot; path=&quot;test&quot;/&gt;
+	&lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/jline-0.9.94.jar&quot;/&gt;
+	&lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/junit-4.5.jar&quot;/&gt;
+	&lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/zql.jar&quot;/&gt;
+	&lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/mina-core-2.0.4.jar&quot;/&gt;
+	&lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/mina-filter-compression-2.0.4.jar&quot;/&gt;
+	&lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/jzlib-1.0.7.jar&quot;/&gt;
+	&lt;classpathentry kind=&quot;lib&quot; path=&quot;lib/slf4j-api-1.6.1.jar&quot;/&gt;
+	&lt;classpathentry kind=&quot;con&quot; path=&quot;org.eclipse.jdt.launching.JRE_CONTAINER&quot;/&gt;
+	&lt;classpathentry kind=&quot;output&quot; path=&quot;bin/src&quot;/&gt;
+&lt;/classpath&gt;</echo>
     </target>
 
     <target name="compile" description="Compile code">
         <Compile srcdir="${src}/java" destdir="${build.src}">
             <classpath refid="classpath.base"/>
         </Compile>
-        <copy todir="${build}" flatten="true">
-            <fileset dir="${src}">
-                <include name="bin/*.sh"/>
-            </fileset>
-        </copy>
+	<copy todir="${build}" flatten="true">
+		<fileset dir="${src}">
+			<include name="bin/*.sh"/>
+		</fileset>
+	</copy>
     </target>
 
     <target name="javadocs" description="Build javadoc documentation">
@@ -190,7 +124,7 @@
         <jar jarfile="${jarfile}" basedir="${build.src}">
             <manifest>
                 <attribute name="Main-Class" value="simpledb.SimpleDb"/>
-                <attribute name="Class-Path" value="../lib/zql.jar ../lib/jline-0.9.94.jar ../lib/jzlib-1.0.7.jar ../lib/mina-core-2.0.4.jar ../lib/mina-filter-compression-2.0.4.jar ../lib/slf4j-api-1.6.1.jar ../lib/slf4j-log4j12-1.6.1.jar ../lib/log4j-1.2.17.jar "/>
+                <attribute name="Class-Path" value="../lib/zql.jar ../lib/jline-0.9.94.jar mina-core-2.0.4.jar mina-filter-compression-2.0.4.jar slf4j-api-1.6.1.jar"/>
             </manifest>
             <!-- Merge library jars into final jar file -->
             <!--<zipgroupfileset refid="lib.jars"/>-->
@@ -201,7 +135,6 @@
         <delete dir="${build}"/>
         <delete dir="${dist}"/>
         <delete dir="${doc}"/>
-        <delete dir="${test.reports}"/>
     </target>
 
     <target name="testcompile" depends="compile" description="Compile all unit and system tests">
@@ -239,7 +172,7 @@
 
         <!-- Check if the class exists -->
         <available property="test.exists" classname="simpledb.${test}">
-            <classpath refid="classpath.test" />
+                <classpath refid="classpath.test" />
         </available>
         <fail unless="test.exists" message="Test ${test} could not be found"/>
 
@@ -255,7 +188,7 @@
 
         <!-- Check if the class exists -->
         <available property="test.exists" classname="simpledb.systemtest.${test}">
-            <classpath refid="classpath.test" />
+                <classpath refid="classpath.test" />
         </available>
         <fail unless="test.exists" message="Test ${test} could not be found"/>
 
@@ -287,22 +220,22 @@
             </fileset>
             <report todir="${test.reports}" />
         </junitreport>
-
+        
         <!-- Fail here if the junit tests failed. -->
         <fail if="junit.failed" message="Some JUnit tests failed"/>
     </target>
-
+    
     <target name="handin" depends="clean"
-            description="Create a tarball of your code to hand in">
-        <tar destfile="CS186-proj2.tar.gz" compression="gzip"
-             basedir="." />
-        <echo message="Tarball created!  Please submit 'CS186-proj2.tar.gz' per the instructions in the project document." />
-        <subant target="dist">
-            <fileset dir="." includes="build.xml"/>
-        </subant>
+        description="Create a tarball of your code to hand in">
+        <tar destfile="CS186-proj3.tar.gz" compression="gzip"
+            basedir="." />
+        <echo message="Tarball created!  Please submit 'CS186-proj3.tar.gz' per the instructions in the project document." />
+    <subant target="dist">
+        <fileset dir="." includes="build.xml"/>
+    </subant>
     </target>
 
     <target name="test-and-handin" depends="test,systemtest,handin"
-            description="Run all the tests and system tests; if they succeed, create a tarball of the source code to submit" />
+        description="Run all the tests and system tests; if they succeed, create a tarball of the source code to submit" />
 
 </project>
