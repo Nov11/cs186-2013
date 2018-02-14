@@ -76,8 +76,7 @@ public class HeapFile implements DbFile {
         int pageNumber = pid.pageNumber();
         int offset = pageNumber * BufferPool.PAGE_SIZE;
         byte[] buffer = new byte[BufferPool.PAGE_SIZE];
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");) {
             randomAccessFile.seek(offset);
             randomAccessFile.read(buffer);
             HeapPage page = new HeapPage(heapPageId, buffer);
@@ -96,10 +95,10 @@ public class HeapFile implements DbFile {
         // some code goes here
         // not necessary for proj1
         int num = page.getId().pageNumber();
-        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
-        randomAccessFile.seek(num * BufferPool.PAGE_SIZE);
-        randomAccessFile.write(page.getPageData());
-        randomAccessFile.close();
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw")) {
+            randomAccessFile.seek(num * BufferPool.PAGE_SIZE);
+            randomAccessFile.write(page.getPageData());
+        }
     }
 
     /**
@@ -118,18 +117,18 @@ public class HeapFile implements DbFile {
         // not necessary for proj1
         BufferPool bufferPool = Database.getBufferPool();
         HeapPage heapPage = null;
-        for(int i = 0; i < numPages(); i++){
+        for (int i = 0; i < numPages(); i++) {
             HeapPageId heapPageId = new HeapPageId(getId(), i);
             Page page = bufferPool.getPage(tid, heapPageId, Permissions.READ_ONLY);
             assert page != null;
             assert page instanceof HeapPage;
-            HeapPage hp = (HeapPage)page;
-            if(hp.getNumEmptySlots() > 0){
+            HeapPage hp = (HeapPage) page;
+            if (hp.getNumEmptySlots() > 0) {
                 heapPage = hp;
                 break;
             }
         }
-        if(heapPage == null){
+        if (heapPage == null) {
             HeapPageId heapPageId = new HeapPageId(getId(), numPages());
             heapPage = new HeapPage(heapPageId, HeapPage.createEmptyPageData());
             this.writePage(heapPage);
