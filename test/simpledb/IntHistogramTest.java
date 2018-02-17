@@ -52,6 +52,7 @@ public class IntHistogramTest {
 		
 		// Even with just 10 bins and 50 values,
 		// the selectivity for this particular value should be at most 0.2.
+		System.out.println(h.toString());
 		Assert.assertTrue(h.estimateSelectivity(Op.EQUALS, -33) < 0.3);
 		
 		// And it really shouldn't be 0.
