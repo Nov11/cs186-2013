@@ -80,7 +80,7 @@ public class JoinOptimizer {
      * The cost of the join should be calculated based on the join algorithm (or
      * algorithms) that you implemented for Project 2. It should be a function of
      * the amount of data that must be read over the course of the query, as
-     * well as the number of CPU opertions performed by your join. Assume that
+     * well as the number of CPU operations performed by your join. Assume that
      * the cost of a single predicate application is roughly 1.
      * 
      * 
@@ -111,7 +111,8 @@ public class JoinOptimizer {
             // HINT: You may need to use the variable "j" if you implemented
             // a join algorithm that's more complicated than a basic nested-loops
             // join.
-            return -1.0;
+
+            return cost1 + card1 * cost2 + card1 * card2;
         }
     }
 
@@ -154,9 +155,17 @@ public class JoinOptimizer {
             String field2PureName, int card1, int card2, boolean t1pkey,
             boolean t2pkey, Map<String, TableStats> stats,
             Map<String, Integer> tableAliasToId) {
-        int card = 1;
-        // some code goes here
-        return card <= 0 ? 1 : card;
+        if(joinOp == Predicate.Op.EQUALS){
+            if(t1pkey && t2pkey){
+                return Math.min(card1, card2);
+            }else if(t1pkey){
+                return card2;
+            }else if(t2pkey){
+                return card1;
+            }
+            return Math.max(card1, card2);
+        }
+        return (int)(card1 * card2 * 0.3);
     }
 
     /**
