@@ -67,7 +67,9 @@ how a physical plan is made in short:
 When catalog.txt and data.data is placed in project top level of folder. The command line can't read table file due to path issue.
 Catalog.java used getParent to retrieve parent directory of catalog.txt if invoked by parser.
 If parser gets a relative path without parent directory, the original code results in path that begins with 'null'.
-A fix is to use no parent path if the return value is null. 
+A fix is to use no parent path if the return value is null.
+
+##### below is for project 2: 
 ```
 SimpleDB>  select d.f1, d.f2 from data d;
  select d.f1, d.f2 from data d;
@@ -143,7 +145,7 @@ AND pa.authorid = a.id
 AND pa.paperid = p.id
 AND p.venueid = v.id;
 ```
-```sql
+```
 Added table : authors with schema INT_TYPE(id),STRING_TYPE(name)
 Added table : venues with schema INT_TYPE(id),STRING_TYPE(name),INT_TYPE(year),INT_TYPE(type)
 Added table : papers with schema INT_TYPE(id),STRING_TYPE(title),INT_TYPE(venueid)
@@ -216,7 +218,7 @@ AND pa1.paperid = pa2.paperid
 GROUP BY a2.name
 ORDER BY a2.name;
 ```
-```sql
+```
 Added table : authors with schema INT_TYPE(id),STRING_TYPE(name)
 Added table : venues with schema INT_TYPE(id),STRING_TYPE(name),INT_TYPE(year),INT_TYPE(type)
 Added table : papers with schema INT_TYPE(id),STRING_TYPE(title),INT_TYPE(venueid)
@@ -272,6 +274,8 @@ Transaction 0 committed.
 SimpleDB> 
 
 ```
+
+##### below is for project 3 with standard data set 0.01
 ```sql
 select d.fname, d.lname
 from Actor a, Casts c, Movie_Director m, Director d
@@ -279,7 +283,7 @@ where a.id=c.pid and c.mid=m.mid and m.did=d.id
 and a.fname='John' and a.lname='Spicer';
 ```
 
-```sql
+```
 Added table : Actor with schema INT_TYPE(id),STRING_TYPE(fname),STRING_TYPE(lname),STRING_TYPE(gender)
 Added table : Movie with schema INT_TYPE(id),STRING_TYPE(name),INT_TYPE(year)
 Added table : Director with schema INT_TYPE(id),STRING_TYPE(fname),STRING_TYPE(lname)
@@ -339,7 +343,7 @@ from Actor a, Casts c, Movie_Director m, Director d, Movie mv
 where a.id=c.pid and c.mid=m.mid and m.did=d.id and mv.id = m.did
 and a.fname='John' and a.lname='Spicer' and mv.year > 2011;
 ```
-```sql
+```
 SimpleDB> select d.fname, d.lname
 SimpleDB> from Actor a, Casts c, Movie_Director m, Director d, Movie mv
 SimpleDB> where a.id=c.pid and c.mid=m.mid and m.did=d.id and mv.id = m.did
