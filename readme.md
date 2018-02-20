@@ -18,6 +18,10 @@ project 2:
 [x] Insertion and deletion  
 [x] Page eviction  
 
+project 3:
+[x] Filter Selectivity
+[x] Join Cardinality
+[x] Join Ordering
 ##### Notes:
 When catalog.txt and data.data is placed in project top level of folder. The command line can't read table file due to path issue.
 Catalog.java used getParent to retrieve parent directory of catalog.txt if invoked by parser.
@@ -223,6 +227,123 @@ Spyros Potamianos 1
 Transaction 0 committed.
 ----------------
 7.65 seconds
+
+SimpleDB> 
+
+```
+```sql
+select d.fname, d.lname
+from Actor a, Casts c, Movie_Director m, Director d
+where a.id=c.pid and c.mid=m.mid and m.did=d.id 
+and a.fname='John' and a.lname='Spicer';
+```
+
+```sql
+Added table : Actor with schema INT_TYPE(id),STRING_TYPE(fname),STRING_TYPE(lname),STRING_TYPE(gender)
+Added table : Movie with schema INT_TYPE(id),STRING_TYPE(name),INT_TYPE(year)
+Added table : Director with schema INT_TYPE(id),STRING_TYPE(fname),STRING_TYPE(lname)
+Added table : Casts with schema INT_TYPE(pid),INT_TYPE(mid),STRING_TYPE(role)
+Added table : Movie_Director with schema INT_TYPE(did),INT_TYPE(mid)
+Added table : Genre with schema INT_TYPE(mid),STRING_TYPE(genre)
+Computing table stats.
+Done.
+Explain mode enabled.
+SimpleDB> select d.fname, d.lname
+SimpleDB> from Actor a, Casts c, Movie_Director m, Director d
+SimpleDB> where a.id=c.pid and c.mid=m.mid and m.did=d.id 
+SimpleDB> and a.fname='John' and a.lname='Spicer';
+Started a new transaction tid = 6
+Added scan of table a
+Added scan of table c
+Added scan of table m
+Added scan of table d
+Added join between a.id and c.pid
+Added join between c.mid and m.mid
+Added join between m.did and d.id
+Added select list field d.fname
+Added select list field d.lname
+[d:m, m:c, a:c]
+PATH SO FAR = [d:m]
+PATH SO FAR = [m:c, d:m]
+PATH SO FAR = [m:c, d:m, a:c]
+The query plan is:
+                            π(d.fname,d.lname),card:1
+                            |
+                            ⨝(a.id=c.pid),card:1
+  __________________________|___________________________
+  |                                                    |
+  σ(a.lname=Spicer),card:1                             ⨝(m.mid=c.mid),card:29729
+  |                                    ________________|_________________
+  σ(a.fname=John),card:1               |                                |
+  |                                    ⨝(d.id=m.did),card:2791          |
+  |                           _________|_________                       |
+  |                           |                 |                     scan(Casts c)
+scan(Actor a)               scan(Director d)  scan(Movie_Director m)
+
+d.fname d.lname 
+------------------------
+
+ 0 rows.
+Transaction 6 committed.
+----------------
+2.42 seconds
+
+SimpleDB> 
+
+```
+
+```sql
+select d.fname, d.lname
+from Actor a, Casts c, Movie_Director m, Director d, Movie mv
+where a.id=c.pid and c.mid=m.mid and m.did=d.id and mv.id = m.did
+and a.fname='John' and a.lname='Spicer' and mv.year > 2011;
+```
+```sql
+SimpleDB> select d.fname, d.lname
+SimpleDB> from Actor a, Casts c, Movie_Director m, Director d, Movie mv
+SimpleDB> where a.id=c.pid and c.mid=m.mid and m.did=d.id and mv.id = m.did
+SimpleDB> and a.fname='John' and a.lname='Spicer' and mv.year > 2011;
+Started a new transaction tid = 12
+Added scan of table a
+Added scan of table c
+Added scan of table m
+Added scan of table d
+Added scan of table mv
+Added join between a.id and c.pid
+Added join between c.mid and m.mid
+Added join between m.did and d.id
+Added join between mv.id and m.did
+Added select list field d.fname
+Added select list field d.lname
+[d:m, m:c, a:c, mv:m]
+PATH SO FAR = [d:m]
+PATH SO FAR = [m:c, d:m]
+PATH SO FAR = [m:c, d:m, a:c]
+PATH SO FAR = [mv:m, m:c, d:m, a:c]
+The query plan is:
+                            π(d.fname,d.lname),card:1
+                            |
+                            ⨝(mv.id=m.did),card:1
+  __________________________|__________________________
+  |                                                   |
+  σ(mv.year>2011),card:1                              ⨝(a.id=c.pid),card:1
+  |                         __________________________|___________________________
+  |                         |                                                    |
+  |                         σ(a.lname=Spicer),card:1                             ⨝(m.mid=c.mid),card:29729
+  |                         |                                    ________________|_________________
+  |                         σ(a.fname=John),card:1               |                                |
+  |                         |                                    ⨝(d.id=m.did),card:2791          |
+  |                         |                           _________|_________                       |
+scan(Movie mv)              |                           |                 |                     scan(Casts c)
+                          scan(Actor a)               scan(Director d)  scan(Movie_Director m)
+
+d.fname d.lname 
+------------------------
+
+ 0 rows.
+Transaction 12 committed.
+----------------
+0.64 seconds
 
 SimpleDB> 
 
