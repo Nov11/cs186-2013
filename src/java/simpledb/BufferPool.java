@@ -19,6 +19,7 @@ public class BufferPool {
     private int numberOfPages;
     private Map<PageId, Page> hash;
     private LRUCache<PageId> lru;
+    private LockManager lm;
     /**
      * Bytes per page, including header.
      */
@@ -41,6 +42,7 @@ public class BufferPool {
         numberOfPages = numPages;
         hash = new HashMap<>(numberOfPages);
         lru = new LRUCache<>();
+        lm = new LockManager();
     }
 
     /**
@@ -61,6 +63,12 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
         // some code goes here
+        assert perm != null;
+        if (perm == Permissions.READ_ONLY){
+            lm.acquireSharedLock(tid, pid);
+        }else{
+            lm.acquireExclusiveLock(tid, pid);
+        }
         Page page = hash.get(pid);
         if (page != null) {
             lru.get(pid);
@@ -89,6 +97,7 @@ public class BufferPool {
     public void releasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for proj1
+        lm.releaseLock(tid, pid);
     }
 
     /**
@@ -99,6 +108,7 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for proj1
+        lm.releaseAllLock(tid);
     }
 
     /**
@@ -107,7 +117,7 @@ public class BufferPool {
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for proj1
-        return false;
+        return lm.isTransactionHoldsALockOnPage(tid, p);
     }
 
     /**

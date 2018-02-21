@@ -119,7 +119,7 @@ public class HeapFile implements DbFile {
         HeapPage heapPage = null;
         for (int i = 0; i < numPages(); i++) {
             HeapPageId heapPageId = new HeapPageId(getId(), i);
-            Page page = bufferPool.getPage(tid, heapPageId, Permissions.READ_ONLY);
+            Page page = bufferPool.getPage(tid, heapPageId, Permissions.READ_WRITE);
             assert page != null;
             assert page instanceof HeapPage;
             HeapPage hp = (HeapPage) page;
@@ -132,7 +132,7 @@ public class HeapFile implements DbFile {
             HeapPageId heapPageId = new HeapPageId(getId(), numPages());
             heapPage = new HeapPage(heapPageId, HeapPage.createEmptyPageData());
             this.writePage(heapPage);
-            heapPage = (HeapPage) bufferPool.getPage(tid, heapPageId, Permissions.READ_ONLY);
+            heapPage = (HeapPage) bufferPool.getPage(tid, heapPageId, Permissions.READ_WRITE);
         }
         heapPage.insertTuple(t);
         ArrayList<Page> result = new ArrayList<>();
