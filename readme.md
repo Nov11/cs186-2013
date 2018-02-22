@@ -27,7 +27,7 @@
 [x] Granting Locks & Lock Lifetime
 [x] Implementing NO STEAL
 [x] Transactions
-[] Deadlocks and Aborts
+[x] Deadlocks and Aborts
 
 #### modified test cases on project 4
 * testHeapFileScanWithManyPages:
@@ -36,7 +36,8 @@ as back to project 2, there's no concept of transaction and the param is not use
 * grabLock
 wrap assertNull with if clause on expected == true. if it's expected to be false, the later one
 could possibly produce some error message. if it's expected to be true, then it should not.
-
+#### deadlock detection and aborts is implemented in a very naive way by using timeout.
+it cant pass transaction system test, but takes several minutes to finish.
 ##### this is the answer for project 3 exercise 1
 exercise 1:
 
