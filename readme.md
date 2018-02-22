@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/Nov11/cs186-2013.svg?branch=master)](https://travis-ci.org/Nov11/cs186-2013)
 ##### Original Course link:
 [(CS186)Intro to Database Systems - Fall 2013](https://sites.google.com/site/cs186fall2013/home)
 
@@ -23,10 +24,10 @@
 [x] Join Cardinality  
 [x] Join Ordering  
 
-##### project 4:
-[x] Granting Locks & Lock Lifetime
-[x] Implementing NO STEAL
-[x] Transactions
+##### project 4:  
+[x] Granting Locks & Lock Lifetime  
+[x] Implementing NO STEAL  
+[x] Transactions  
 [x] Deadlocks and Aborts
 
 #### modified test cases on project 4
