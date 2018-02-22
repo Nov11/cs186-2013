@@ -244,6 +244,9 @@ public class BufferPool {
         // not necessary for proj1
         List<PageId> pages = tid.getPageIds();
         tid.clearPages();
+        if (pages == null) {
+            return;
+        }
         for (PageId pid : pages) {
             if (hash.get(pid) == null) {
                 continue;
@@ -258,6 +261,9 @@ public class BufferPool {
     public synchronized void reloadPages(TransactionId tid) throws IOException {
         List<PageId> pageIds = tid.getPageIds();
         tid.clearPages();
+        if (pageIds == null) {
+            return;
+        }
         for (PageId pid : pageIds) {
             if (hash.get(pid) == null) {
                 continue;

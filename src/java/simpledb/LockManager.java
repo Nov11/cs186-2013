@@ -47,13 +47,13 @@ public class LockManager {
         tid2Lock = new ConcurrentHashMap<>();
     }
 
-    public void acquireSharedLock(TransactionId tid, PageId pageId) {
+    public void acquireSharedLock(TransactionId tid, PageId pageId) throws TransactionAbortedException{
         CustomLock lock = hash.computeIfAbsent(pageId, k -> new CustomLock());
         lock.lockRead(tid);
         tid2Lock.computeIfAbsent(tid, k -> new ConcurrentHashSet<>()).add(lock);
     }
 
-    public void acquireExclusiveLock(TransactionId tid, PageId pageId) {
+    public void acquireExclusiveLock(TransactionId tid, PageId pageId) throws TransactionAbortedException {
         CustomLock lock = hash.computeIfAbsent(pageId, k -> new CustomLock());
         lock.lockWrite(tid);
         tid2Lock.computeIfAbsent(tid, k -> new ConcurrentHashSet<>()).add(lock);
@@ -77,6 +77,9 @@ public class LockManager {
     public void releaseAllLocks(TransactionId tid) {
         Set<CustomLock> s = tid2Lock.get(tid);
         //There must be something insane going on if releaseAllLocks is invoked in more than one thread.
+        if (s == null) {
+            return;
+        }
         for (CustomLock lock : s) {
             lock.releaseLock(tid);
         }
@@ -95,13 +98,18 @@ class CustomLock {
         holdingLock = new HashSet<>();
     }
 
-    public synchronized void lockRead(TransactionId tid) {
-        while (!(writeCount == 0) && !(writeCount == 1 && holdingLock.contains(tid))) {
+    public synchronized void lockRead(TransactionId tid) throws TransactionAbortedException {
+        int cnt = 5;
+        while (!(writeCount == 0) && !(writeCount == 1 && holdingLock.contains(tid)) && cnt > 0) {
             try {
-                wait();
+                wait(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            cnt--;
+        }
+        if (cnt == 0) {
+            throw new TransactionAbortedException();
         }
 
         if (!holdingLock.contains(tid)) {
@@ -110,15 +118,21 @@ class CustomLock {
         }
     }
 
-    public synchronized void lockWrite(TransactionId tid) {
+    public synchronized void lockWrite(TransactionId tid) throws TransactionAbortedException {
+        int cnt = 5;
         while (!(writeCount == 0 && readCount == 0)
                 && !(writeCount == 0 && readCount == 1 && holdingLock.contains(tid))
-                && !(writeCount == 1 && holdingLock.contains(tid))) {
+                && !(writeCount == 1 && holdingLock.contains(tid))
+                && cnt > 0) {
             try {
-                wait();
+                wait(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            cnt--;
+        }
+        if (cnt == 0) {
+            throw new TransactionAbortedException();
         }
         if (readCount == 0 && writeCount == 0) {
             assert holdingLock.size() == 0;
