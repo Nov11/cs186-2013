@@ -25,8 +25,8 @@
 
 ##### project 4:
 [x] Granting Locks & Lock Lifetime
-[] Implementing NO STEAL
-[] Transactions
+[x] Implementing NO STEAL
+[x] Transactions
 [] Deadlocks and Aborts
 
 ##### this is the answer for project 3 exercise 1
