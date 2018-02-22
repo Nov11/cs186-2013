@@ -1,9 +1,8 @@
 language: java
 
 jdk:
-  - oraclejdk8
   - oraclejdk9
 
 script:
 - ant test
-- ant systemtest
+- travis_wait ant systemtest
