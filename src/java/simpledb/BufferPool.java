@@ -1,7 +1,5 @@
 package simpledb;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -329,7 +327,7 @@ public class BufferPool {
         }
 
         K evict() {
-            throw new NotImplementedException();
+            throw new UnsupportedOperationException();
 //            Node n = last();
 //            if (n == null) {
 //                return null;

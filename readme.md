@@ -29,6 +29,14 @@
 [x] Transactions
 [] Deadlocks and Aborts
 
+#### modified test cases on project 4
+* testHeapFileScanWithManyPages:
+change transaction id passed to seqscan from null to a local variable transaction id.
+as back to project 2, there's no concept of transaction and the param is not used.
+* grabLock
+wrap assertNull with if clause on expected == true. if it's expected to be false, the later one
+could possibly produce some error message. if it's expected to be true, then it should not.
+
 ##### this is the answer for project 3 exercise 1
 exercise 1:
 

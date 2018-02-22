@@ -89,7 +89,9 @@ public class LockingTest extends TestUtil.CreateHeapFile {
     // if we don't have the lock after TIMEOUT, we assume blocking.
     Thread.sleep(TIMEOUT);
     assertEquals(expected, t.acquired());
-    assertNull(t.getError());
+    if (expected) {
+        assertNull(t.getError());
+    }
 
     // TODO(ghuo): yes, stop() is evil, but this is unit test cleanup
     t.stop();
