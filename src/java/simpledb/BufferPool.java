@@ -1,5 +1,7 @@
 package simpledb;
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -72,6 +74,7 @@ public class BufferPool {
         Page page = hash.get(pid);
         if (page != null) {
             lru.get(pid);
+            tid.addPageId(pid);
             return page;
         }
         if (hash.size() == numberOfPages) {
@@ -82,6 +85,7 @@ public class BufferPool {
         page = dbFile.readPage(pid);
         hash.put(pid, page);
         lru.put(pid);
+        tid.addPageId(pid);
         return page;
     }
 
@@ -108,7 +112,7 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for proj1
-        lm.releaseAllLocks(tid);
+        transactionComplete(tid, true);
     }
 
     /**
@@ -131,6 +135,16 @@ public class BufferPool {
             throws IOException {
         // some code goes here
         // not necessary for proj1
+        if (commit) {
+            //write dirty pages related to this transaction out to disk
+            //transactionComplete in transaction.java already did this, I cancelled that invocation
+            flushPages(tid);
+        } else {
+            //load original pages modified by this transaction from disk
+            reloadPages(tid);
+        }
+        //release all locks held by this transaction
+        lm.releaseAllLocks(tid);
     }
 
     /**
@@ -228,6 +242,35 @@ public class BufferPool {
     public synchronized void flushPages(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for proj1
+        List<PageId> pages = tid.getPageIds();
+        tid.clearPages();
+        for (PageId pid : pages) {
+            if (hash.get(pid) == null) {
+                continue;
+            }
+            Page p = hash.get(pid);
+            if (p.isDirty() != null) {
+                flushPage(pid);
+            }
+        }
+    }
+
+    public synchronized void reloadPages(TransactionId tid) throws IOException {
+        List<PageId> pageIds = tid.getPageIds();
+        tid.clearPages();
+        for (PageId pid : pageIds) {
+            if (hash.get(pid) == null) {
+                continue;
+            }
+            Page p = hash.get(pid);
+            if (p.isDirty() != null) {
+                Catalog catalog = Database.getCatalog();
+                DbFile dbFile = catalog.getDbFile(pid.getTableId());
+                Page original = dbFile.readPage(pid);
+                hash.put(pid, original);
+                lru.put(pid);
+            }
+        }
     }
 
     /**
@@ -237,8 +280,19 @@ public class BufferPool {
     private synchronized void evictPage() throws DbException {
         // some code goes here
         // not necessary for proj1
-        PageId pageId = lru.evict();
-        assert pageId != null;
+        PageId pageId = null;
+        List<PageId> ret = lru.evictCandidates();
+        for (PageId tmp : ret) {
+            Page p = hash.get(tmp);
+            if (p.isDirty() == null) {
+                pageId = tmp;
+                lru.evictKey(pageId);
+                break;
+            }
+        }
+        if (pageId == null) {
+            throw new DbException("no free clean page");
+        }
         try {
             flushPage(pageId);
         } catch (IOException e) {
@@ -269,14 +323,32 @@ public class BufferPool {
         }
 
         K evict() {
-            Node n = last();
-            if (n == null) {
-                return null;
+            throw new NotImplementedException();
+//            Node n = last();
+//            if (n == null) {
+//                return null;
+//            }
+//            K ret = (K) n.key;
+//            remove(head.prev);
+//            hash.remove(ret);
+//            return ret;
+        }
+
+        List<K> evictCandidates() {
+            List<K> result = new ArrayList<>();
+            Node iter = head.prev;
+            while (iter != head) {
+                result.add((K) iter.key);
+                iter = iter.prev;
             }
-            K ret = (K) n.key;
-            remove(head.prev);
-            hash.remove(ret);
-            return ret;
+            return result;
+        }
+
+        void evictKey(K key) {
+            assert hash.containsKey(key);
+            Node node = hash.get(key);
+            remove(node);
+            hash.remove(key);
         }
 
         void get(K key) {

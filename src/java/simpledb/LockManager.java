@@ -40,6 +40,7 @@ public class LockManager {
     private Map<PageId, CustomLock> hash;
     private Map<TransactionId, Set<CustomLock>> tid2Lock;
 
+
     public LockManager() {
         hash = new ConcurrentHashMap<>();
 //        mutex = new ReentrantLock();

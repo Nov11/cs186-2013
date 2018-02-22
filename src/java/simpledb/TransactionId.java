@@ -1,6 +1,8 @@
 package simpledb;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -8,9 +10,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TransactionId implements Serializable {
 
-	private static final long serialVersionUID = 1L;
-	
-	static AtomicLong counter = new AtomicLong(0);
+    private static final long serialVersionUID = 1L;
+
+    static AtomicLong counter = new AtomicLong(0);
     long myid;
 
     public TransactionId() {
@@ -22,10 +24,24 @@ public class TransactionId implements Serializable {
     }
 
     public boolean equals(Object tid) {
-        return ((TransactionId)tid).myid == myid;
+        return ((TransactionId) tid).myid == myid;
     }
 
     public int hashCode() {
         return (int) myid;
+    }
+
+    private List<PageId> pageIds = new ArrayList<>();
+
+    public void addPageId(PageId pageId) {
+        pageIds.add(pageId);
+    }
+
+    public List<PageId> getPageIds() {
+        return pageIds;
+    }
+
+    public void clearPages() {
+        pageIds = null;
     }
 }
