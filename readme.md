@@ -23,6 +23,13 @@
 [x] Join Cardinality  
 [x] Join Ordering  
 
+##### project 4:
+[x] Granting Locks & Lock Lifetime
+[] Implementing NO STEAL
+[] Transactions
+[] Deadlocks and Aborts
+
+##### this is the answer for project 3 exercise 1
 exercise 1:
 
 simpledb.Parser.handleQueryStatement():
