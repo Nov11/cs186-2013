@@ -64,9 +64,9 @@ public class BufferPool {
             throws TransactionAbortedException, DbException {
         // some code goes here
         assert perm != null;
-        if (perm == Permissions.READ_ONLY){
+        if (perm == Permissions.READ_ONLY) {
             lm.acquireSharedLock(tid, pid);
-        }else{
+        } else {
             lm.acquireExclusiveLock(tid, pid);
         }
         Page page = hash.get(pid);
@@ -108,7 +108,7 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for proj1
-        lm.releaseAllLock(tid);
+        lm.releaseAllLocks(tid);
     }
 
     /**

@@ -165,15 +165,19 @@ public class LockingTest extends TestUtil.CreateHeapFile {
    * A single transaction should be able to acquire a read lock after it
    * already has a write lock.
    *
-   * it's not likely that a single thread will be executing in more than one thread.
+   * this is the original version that using metaLockTester
+   *
+   * <del>
+   * it's not likely that a single transaction will be executing in more than one thread.
    * so I change this into single thread test.
+   * </del>
    */
   @Test public void acquireWriteAndReadLocks() throws Exception {
-//    metaLockTester(tid1, p0, Permissions.READ_WRITE,
-//                   tid1, p0, Permissions.READ_ONLY, true);
-    Page p1 = bp.getPage(tid1, p0, Permissions.READ_WRITE);
-    Page p2 = bp.getPage(tid1, p0, Permissions.READ_ONLY);
-    assertEquals(p1, p2);
+    metaLockTester(tid1, p0, Permissions.READ_WRITE,
+                   tid1, p0, Permissions.READ_ONLY, true);
+//    Page p1 = bp.getPage(tid1, p0, Permissions.READ_WRITE);
+//    Page p2 = bp.getPage(tid1, p0, Permissions.READ_ONLY);
+//    assertEquals(p1, p2);
   }
 
   /**

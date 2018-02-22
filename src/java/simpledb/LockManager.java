@@ -3,25 +3,180 @@ package simpledb;
 import org.apache.mina.util.ConcurrentHashSet;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * This project is using page level locking only. So the lock manager implements page level locking.
  * <p>
+ * Test cases requires that a single transaction can be running in different threads.
+ * Read Write lock is not applicable as it is not allowed to do unlock from a different thread.
+ * I have to implement a more customized version of lock with the functions:
+ * 1. read lock & write lock
+ * 2. block & wake up
+ * 3. upgrade from read lock to write lock if possible
+ * 4. check tid related to current active lock type. i.e. for read lock being hold return the transaction set
+ * 5. very common that tid already lock on a page and request same kind of lock later, since this is page level locking.
+ * 6. it's able to get a read lock if itself holds a write lock.
+ * (emm.... guess I'm not very fond of page level locking
+ * <p>
+ * About lock manager
  * This class maintains info :
- * 1. locks being held on a page
- * 2.
+ * 1. locks related to a page(there is no page deletion function for now, or lock manager should be updated)
+ * 2. transactions to their locks being held
+ * <p>
+ * java.util's read write lock version is listed in the bottom but not used.
+ * </p>
  */
 public class LockManager {
+    //    private ReentrantLock mutex;
+    private Map<PageId, CustomLock> hash;
+    private Map<TransactionId, Set<CustomLock>> tid2Lock;
+
+    public LockManager() {
+        hash = new ConcurrentHashMap<>();
+//        mutex = new ReentrantLock();
+        tid2Lock = new ConcurrentHashMap<>();
+    }
+
+    public void acquireSharedLock(TransactionId tid, PageId pageId) {
+        CustomLock lock = hash.computeIfAbsent(pageId, k -> new CustomLock());
+        lock.lockRead(tid);
+        tid2Lock.computeIfAbsent(tid, k -> new ConcurrentHashSet<>()).add(lock);
+    }
+
+    public void acquireExclusiveLock(TransactionId tid, PageId pageId) {
+        CustomLock lock = hash.computeIfAbsent(pageId, k -> new CustomLock());
+        lock.lockWrite(tid);
+        tid2Lock.computeIfAbsent(tid, k -> new ConcurrentHashSet<>()).add(lock);
+    }
+// no need
+//    public void upgradeSharedLockToExclusiveLock(TransactionId tid, PageId pageId) {
+//
+//    }
+
+    public void releaseLock(TransactionId tid, PageId pageId) {
+        CustomLock lock = hash.computeIfAbsent(pageId, k -> new CustomLock());
+        lock.releaseLock(tid);
+        tid2Lock.computeIfAbsent(tid, k -> new ConcurrentHashSet<>()).remove(lock);
+    }
+
+    public boolean isTransactionHoldsALockOnPage(TransactionId tid, PageId pageId) {
+        CustomLock lock = hash.computeIfAbsent(pageId, k -> new CustomLock());
+        return lock.isHoldingLock(tid);
+    }
+
+    public void releaseAllLocks(TransactionId tid) {
+        Set<CustomLock> s = tid2Lock.get(tid);
+        //There must be something insane going on if releaseAllLocks is invoked in more than one thread.
+        for (CustomLock lock : s) {
+            lock.releaseLock(tid);
+        }
+        tid2Lock.remove(tid);
+    }
+}
+
+class CustomLock {
+    private Set<TransactionId> holdingLock; //transactions that hold lock on this object
+    //it's possible that readCount and writeCount both equals to 1
+    //that'll be the case when transaction request a write lock and later a read lock on the same page.
+    private int readCount = 0; //number of read locks
+    private int writeCount = 0;//number of write locks
+
+    public CustomLock() {
+        holdingLock = new HashSet<>();
+    }
+
+    public synchronized void lockRead(TransactionId tid) {
+        while (!(writeCount == 0) && !(writeCount == 1 && holdingLock.contains(tid))) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (!holdingLock.contains(tid)) {
+            readCount++;
+            holdingLock.add(tid);
+        }
+    }
+
+    public synchronized void lockWrite(TransactionId tid) {
+        while (!(writeCount == 0 && readCount == 0)
+                && !(writeCount == 0 && readCount == 1 && holdingLock.contains(tid))
+                && !(writeCount == 1 && holdingLock.contains(tid))) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        if (readCount == 0 && writeCount == 0) {
+            assert holdingLock.size() == 0;
+            writeCount++;
+            holdingLock.add(tid);
+        } else if (readCount == 1 && writeCount == 0 && holdingLock.contains(tid)) {
+            readCount--;
+            writeCount++;
+        } else if (writeCount == 1 && holdingLock.contains(tid)) {
+            assert readCount == 0 || readCount == 1;
+        } else {
+            assert false;
+        }
+    }
+//
+//    public synchronized void releaseRead(TransactionId tid) {
+//        assert holdingLock.contains(tid);
+//        assert readCount > 0;
+//        readCount--;
+//        if (readCount == 0) {
+//            notifyAll();
+//        }
+//    }
+//
+//    public synchronized void releaseWrite(TransactionId tid) {
+//        assert holdingLock.contains(tid);
+//        assert writeCount == 1;
+//        writeCount--;
+//        notifyAll();
+//    }
+
+    public synchronized boolean isHoldingLock(TransactionId tid) {
+        return holdingLock.contains(tid);
+    }
+
+    public synchronized void releaseLock(TransactionId tid) {
+        if (holdingLock.contains(tid)) {
+            holdingLock.remove(tid);
+            if (readCount > 0) {
+                readCount--;
+                if (readCount == 0) {
+                    notifyAll();
+                }
+            }
+            if (writeCount == 1) {
+                writeCount = 0;
+                notifyAll();
+            }
+        }
+    }
+}
+
+
+class LockManagerOld {
     private Map<PageId, ReentrantReadWriteLock> hash;
     private Map<TransactionId, Set<ReentrantReadWriteLock.ReadLock>> readLockTable;
     private Map<TransactionId, Set<ReentrantReadWriteLock.WriteLock>> writeLockTable;
 
-    public LockManager() {
+    public LockManagerOld() {
         hash = new ConcurrentHashMap<>();
         readLockTable = new ConcurrentHashMap<>();
         writeLockTable = new ConcurrentHashMap<>();
