@@ -39,6 +39,18 @@ wrap assertNull with if clause on expected == true. if it's expected to be false
 could possibly produce some error message. if it's expected to be true, then it should not.
 #### deadlock detection and aborts is implemented in a very naive way by using timeout.
 it cant pass transaction system test, but takes several minutes to finish.
+guess win10 and ubuntu differ in some way so that the naive version cannot work on ubuntu.
+I made some improvement.
+1. request on shared lock and exclusive lock will be aborted when timed out.
+2. when there's already a transaction waiting on a write lock:
+    - a transaction with higher tid which is considered younger aborts itself.
+    - a transaction with lower tid which is considered older and have completed much more work place itself as the waiting transaction with the lowest tid and wake waiting thread on this lock
+    - on wake up, if a transaction sees that its tid is greater than the lowest one, it aborts itself
+    
+so that every time concurrent threads acquire a shared lock and wait on an exclusive lock on the same page, the one with lowest tid will proceed.  
+
+but the wait time is tricky to pick. if too many transactions aborts and it times out before the last one finishes aborting, this won't work.
+there's no guarantee on delay but should be ok to proceed. Personally I prefer deadlock avoidance wait-die / wounded-wait to deadlock detection.   
 ##### this is the answer for project 3 exercise 1
 exercise 1:
 
