@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/Nov11/cs186-2013.svg?branch=master)](https://travis-ci.org/Nov11/cs186-2013)
 ##### Original Course link:
 [(CS186)Intro to Database Systems - Fall 2013](https://sites.google.com/site/cs186fall2013/home)
 
@@ -23,11 +24,11 @@
 [x] Join Cardinality  
 [x] Join Ordering  
 
-##### project 4:
-[x] Granting Locks & Lock Lifetime
-[x] Implementing NO STEAL
-[x] Transactions
-[] Deadlocks and Aborts
+##### project 4:  
+[x] Granting Locks & Lock Lifetime  
+[x] Implementing NO STEAL  
+[x] Transactions  
+[x] Deadlocks and Aborts
 
 #### modified test cases on project 4
 * testHeapFileScanWithManyPages:
@@ -36,7 +37,8 @@ as back to project 2, there's no concept of transaction and the param is not use
 * grabLock
 wrap assertNull with if clause on expected == true. if it's expected to be false, the later one
 could possibly produce some error message. if it's expected to be true, then it should not.
-
+#### deadlock detection and aborts is implemented in a very naive way by using timeout.
+it cant pass transaction system test, but takes several minutes to finish.
 ##### this is the answer for project 3 exercise 1
 exercise 1:
 
