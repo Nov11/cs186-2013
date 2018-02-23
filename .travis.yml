@@ -5,4 +5,4 @@ jdk:
 
 script:
 - ant test
-- travis_wait ant systemtest
+- ant systemtest
