@@ -88,7 +88,7 @@ public class TransactionTest extends SimpleDbTestBase {
                     // Wait for all threads to be ready
                     latch.await();
                     Transaction tr = new Transaction();
-                    System.err.println("tid:" + tr.getId().getId());
+//                    System.err.println("tid:" + tr.getId().getId());
                     try {
                         tr.start();
                         SeqScan ss1 = new SeqScan(tr.getId(), tableId, "");
@@ -134,13 +134,13 @@ public class TransactionTest extends SimpleDbTestBase {
                         q3.close();
 
                         tr.commit();
-                        System.err.println("tid:" + tr.getId().getId() + "committed");
+//                        System.err.println("tid:" + tr.getId().getId() + "committed");
                         break;
                     } catch (TransactionAbortedException te) {
                         //System.out.println("thread " + tr.getId() + " killed");
                         // give someone else a chance: abort the transaction
                         tr.transactionComplete(true);
-                        System.err.println("tid:" + tr.getId().getId() + "aborted");
+//                        System.err.println("tid:" + tr.getId().getId() + "aborted");
                         latch.stillParticipating();
                     }
                 }
