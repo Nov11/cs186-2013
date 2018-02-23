@@ -129,7 +129,7 @@ class CustomLock {
     }
 
     public synchronized void lockWrite(TransactionId tid) throws TransactionAbortedException {
-        final int WAIT_TIME = 200;
+        final int WAIT_TIME = 250;
         long waitTime = WAIT_TIME;
         boolean timeOut = false;
         while (!(writeCount == 0 && readCount == 0)
@@ -139,6 +139,7 @@ class CustomLock {
             if (waitPending == null) {
                 waitPending = tid;
             } else if (tid.getId() > waitPending.getId()) {
+                System.err.println("there's an older txn " + waitPending.getId() + " waiting." + tid.getId()+" abort");
                 throw new TransactionAbortedException(tid.getId() + "");
             } else if (tid.getId() < waitPending.getId()) {
                 waitPending = tid;
@@ -159,6 +160,7 @@ class CustomLock {
             if (waitPending == tid) {
                 waitPending = null;
             }
+            System.err.println("timeout " + tid.getId() + " abort");
             throw new TransactionAbortedException(tid.getId() + "");
         }
         if (readCount == 0 && writeCount == 0) {

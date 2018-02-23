@@ -255,9 +255,21 @@ public class HeapPage implements Page {
 //            }
 //        }
         RecordId recordId = t.getRecordId();
+        if (recordId == null) {
+            throw new DbException("tuple with null record id:" + t);
+        }
         int tupleNo = recordId.tupleno();
         if (!isSlotUsed(tupleNo)) {
             throw new DbException("tuple not found:" + t);
+        }
+        Tuple target = tuples[tupleNo];
+        if(!target.getTupleDesc().equals(t.getTupleDesc())){
+            throw new DbException("tuple desc not match: param:" + t + " target:" + target);
+        }
+        for(int i = 0; i < target.getTupleDesc().numFields(); i++){
+            if(!target.getField(i).equals(t.getField(i))){
+                throw new DbException("tuple field(" + i + " not match: param:" + t.getField(i) + " target:" + target.getField(i));
+            }
         }
         tuples[tupleNo] = null;
         markSlotUsed(tupleNo, false);
