@@ -1,10 +1,8 @@
 package simpledb;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -40,7 +38,7 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         numberOfPages = numPages;
-        hash = new HashMap<>(numberOfPages);
+        hash = new ConcurrentHashMap<>(numberOfPages);
         lru = new LRUCache<>();
         lm = new LockManager();
     }
@@ -76,7 +74,7 @@ public class BufferPool {
             return page;
         }
         if (hash.size() == numberOfPages) {
-            evictPage();
+            evictPage(tid);
         }
         Catalog catalog = Database.getCatalog();
         DbFile dbFile = catalog.getDbFile(pid.getTableId());
@@ -165,11 +163,11 @@ public class BufferPool {
         // not necessary for proj1
         Catalog catalog = Database.getCatalog();
         HeapFile heapFile = (HeapFile) catalog.getDbFile(tableId);
-        ArrayList<Page> ret = heapFile.insertTuple(tid, t);
-        for (Page page : ret) {
-            page.markDirty(true, tid);
-//            hash.put(page.getId(), page);
-        }
+        ArrayList<Page> ret = heapFile.insertTuple(tid, t);//marked dirty inside heapfile's method
+//        for (Page page : ret) {
+//            page.markDirty(true, tid);
+////            hash.put(page.getId(), page);
+//        }
     }
 
     /**
@@ -190,8 +188,7 @@ public class BufferPool {
         // some code goes here
         // not necessary for proj1
         HeapFile heapFile = (HeapFile) Database.getCatalog().getDbFile(t.getRecordId().getPageId().getTableId());
-        Page ret = heapFile.deleteTuple(tid, t);
-        ret.markDirty(true, tid);
+        Page ret = heapFile.deleteTuple(tid, t);//marked dirty inside heapfile's method
     }
 
     /**
@@ -203,7 +200,7 @@ public class BufferPool {
         // some code goes here
         // not necessary for proj1
         for (PageId pageId : hash.keySet()) {
-            flushPage(pageId);
+            flushPage(pageId, null);
         }
     }
 
@@ -223,7 +220,7 @@ public class BufferPool {
      *
      * @param pid an ID indicating the page to flush
      */
-    private synchronized void flushPage(PageId pid) throws IOException {
+    private synchronized void flushPage(PageId pid, TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for proj1
         Page page = hash.get(pid);
@@ -231,7 +228,7 @@ public class BufferPool {
         int tableId = page.getId().getTableId();
         HeapFile heapFile = (HeapFile) Database.getCatalog().getDbFile(tableId);
         heapFile.writePage(page);
-        page.markDirty(false, null);
+        page.markDirty(false, tid);
     }
 
     /**
@@ -240,7 +237,7 @@ public class BufferPool {
     public synchronized void flushPages(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for proj1
-        List<PageId> pages = tid.getPageIds();
+        Set<PageId> pages = tid.getPageIds();
         tid.clearPages();
         if (pages == null) {
             return;
@@ -251,13 +248,13 @@ public class BufferPool {
             }
             Page p = hash.get(pid);
             if (p.isDirty() != null) {
-                flushPage(pid);
+                flushPage(pid, tid);
             }
         }
     }
 
     public synchronized void reloadPages(TransactionId tid) throws IOException {
-        List<PageId> pageIds = tid.getPageIds();
+        Set<PageId> pageIds = tid.getPageIds();
         tid.clearPages();
         if (pageIds == null) {
             return;
@@ -281,7 +278,7 @@ public class BufferPool {
      * Discards a page from the buffer pool.
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
-    private synchronized void evictPage() throws DbException {
+    private synchronized void evictPage(TransactionId tid) throws DbException {
         // some code goes here
         // not necessary for proj1
         PageId pageId = null;
@@ -298,7 +295,7 @@ public class BufferPool {
             throw new DbException("no free clean page");
         }
         try {
-            flushPage(pageId);
+            flushPage(pageId, tid);
         } catch (IOException e) {
             e.printStackTrace();
             throw new DbException("cannot flush dirty page when evicting from buffer pool!");

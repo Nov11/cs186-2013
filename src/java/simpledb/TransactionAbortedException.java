@@ -8,4 +8,7 @@ public class TransactionAbortedException extends Exception {
 
     public TransactionAbortedException() {
     }
+    public TransactionAbortedException(String msg){
+        super(msg);
+    }
 }

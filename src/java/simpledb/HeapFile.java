@@ -116,24 +116,27 @@ public class HeapFile implements DbFile {
         // some code goes here
         // not necessary for proj1
         BufferPool bufferPool = Database.getBufferPool();
-        HeapPage heapPage = null;
+        HeapPageId heapPageId = null;
+
         for (int i = 0; i < numPages(); i++) {
-            HeapPageId heapPageId = new HeapPageId(getId(), i);
-            Page page = bufferPool.getPage(tid, heapPageId, Permissions.READ_WRITE);
+            HeapPageId phid = new HeapPageId(getId(), i);
+            Page page = bufferPool.getPage(tid, phid, Permissions.READ_ONLY);
             assert page != null;
             assert page instanceof HeapPage;
             HeapPage hp = (HeapPage) page;
             if (hp.getNumEmptySlots() > 0) {
-                heapPage = hp;
+                heapPageId = phid;
                 break;
             }
         }
-        if (heapPage == null) {
-            HeapPageId heapPageId = new HeapPageId(getId(), numPages());
-            heapPage = new HeapPage(heapPageId, HeapPage.createEmptyPageData());
-            this.writePage(heapPage);
-            heapPage = (HeapPage) bufferPool.getPage(tid, heapPageId, Permissions.READ_WRITE);
+        if (heapPageId == null) {
+            heapPageId = new HeapPageId(getId(), numPages());
+            HeapPage hp = new HeapPage(heapPageId, HeapPage.createEmptyPageData());
+            this.writePage(hp);
         }
+        HeapPage heapPage = (HeapPage) bufferPool.getPage(tid, heapPageId, Permissions.READ_WRITE);
+        heapPage.markDirty(true, tid);
+        int tmp = heapPage.getNumEmptySlots();
         heapPage.insertTuple(t);
         ArrayList<Page> result = new ArrayList<>();
         result.add(heapPage);
@@ -147,6 +150,7 @@ public class HeapFile implements DbFile {
         // not necessary for proj1
         BufferPool bufferPool = Database.getBufferPool();
         HeapPage heapPage = (HeapPage) bufferPool.getPage(tid, t.getRecordId().getPageId(), Permissions.READ_WRITE);
+        heapPage.markDirty(true, tid);
         heapPage.deleteTuple(t);
         return heapPage;
     }

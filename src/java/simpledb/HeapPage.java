@@ -246,15 +246,22 @@ public class HeapPage implements Page {
     public void deleteTuple(Tuple t) throws DbException {
         // some code goes here
         // not necessary for lab1
-        for (int i = 0; i < tuples.length; i++) {
-            if (tuples[i] == t) {
-                tuples[i] = null;
-                markSlotUsed(i, false);
-                t.setRecordId(null);
-                return;
-            }
+//        for (int i = 0; i < tuples.length; i++) {
+//            if (tuples[i] == t) {
+//                tuples[i] = null;
+//                markSlotUsed(i, false);
+//                t.setRecordId(null);
+//                return;
+//            }
+//        }
+        RecordId recordId = t.getRecordId();
+        int tupleNo = recordId.tupleno();
+        if (!isSlotUsed(tupleNo)) {
+            throw new DbException("tuple not found:" + t);
         }
-        throw new DbException("tuple not found:" + t);
+        tuples[tupleNo] = null;
+        markSlotUsed(tupleNo, false);
+        t.setRecordId(null);
     }
 
     /**

@@ -2,10 +2,7 @@ package simpledb;
 
 import org.apache.mina.util.ConcurrentHashSet;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
@@ -47,7 +44,7 @@ public class LockManager {
         tid2Lock = new ConcurrentHashMap<>();
     }
 
-    public void acquireSharedLock(TransactionId tid, PageId pageId) throws TransactionAbortedException{
+    public void acquireSharedLock(TransactionId tid, PageId pageId) throws TransactionAbortedException {
         CustomLock lock = hash.computeIfAbsent(pageId, k -> new CustomLock());
         lock.lockRead(tid);
         tid2Lock.computeIfAbsent(tid, k -> new ConcurrentHashSet<>()).add(lock);
@@ -66,7 +63,7 @@ public class LockManager {
     public void releaseLock(TransactionId tid, PageId pageId) {
         CustomLock lock = hash.computeIfAbsent(pageId, k -> new CustomLock());
         lock.releaseLock(tid);
-        tid2Lock.computeIfAbsent(tid, k -> new ConcurrentHashSet<>()).remove(lock);
+        tid2Lock.get(tid).remove(lock);
     }
 
     public boolean isTransactionHoldsALockOnPage(TransactionId tid, PageId pageId) {
@@ -93,58 +90,91 @@ class CustomLock {
     //that'll be the case when transaction request a write lock and later a read lock on the same page.
     private int readCount = 0; //number of read locks
     private int writeCount = 0;//number of write locks
+    private TransactionId waitPending;
 
     public CustomLock() {
         holdingLock = new HashSet<>();
     }
 
     public synchronized void lockRead(TransactionId tid) throws TransactionAbortedException {
-        int cnt = 5;
-        while (!(writeCount == 0) && !(writeCount == 1 && holdingLock.contains(tid)) && cnt > 0) {
+        long waitTime = 5;
+        boolean timeOut = false;
+        while (!(writeCount == 0) && !(writeCount == 1 && holdingLock.contains(tid)) && !timeOut) {
+            long cur = System.currentTimeMillis();
             try {
-                wait(10);
+                wait(waitTime);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            cnt--;
+            long prev = cur;
+            cur = System.currentTimeMillis();
+            waitTime -= cur - prev;
+            timeOut = waitTime < 0;
         }
-        if (cnt == 0) {
-            throw new TransactionAbortedException();
+        if (timeOut) {
+            throw new TransactionAbortedException(tid.getId() + "");
         }
-
-        if (!holdingLock.contains(tid)) {
-            readCount++;
-            holdingLock.add(tid);
+        if (writeCount == 0) {
+            if (!holdingLock.contains(tid)) {
+                readCount++;
+                holdingLock.add(tid);
+            }
+        } else if (writeCount == 1 && holdingLock.contains(tid)) {
+            if (readCount == 0) {
+                readCount = 1;
+            }
+        } else {
+            assert false;
         }
     }
 
     public synchronized void lockWrite(TransactionId tid) throws TransactionAbortedException {
-        int cnt = 5;
+        final int WAIT_TIME = 200;
+        long waitTime = WAIT_TIME;
+        boolean timeOut = false;
         while (!(writeCount == 0 && readCount == 0)
                 && !(writeCount == 0 && readCount == 1 && holdingLock.contains(tid))
                 && !(writeCount == 1 && holdingLock.contains(tid))
-                && cnt > 0) {
+                && !timeOut) {
+            if (waitPending == null) {
+                waitPending = tid;
+            } else if (tid.getId() > waitPending.getId()) {
+                throw new TransactionAbortedException(tid.getId() + "");
+            } else if (tid.getId() < waitPending.getId()) {
+                waitPending = tid;
+                notifyAll();
+            }
+            long cur = System.currentTimeMillis();
             try {
-                wait(10);
+                wait(waitTime+1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            cnt--;
+            long prev = cur;
+            cur = System.currentTimeMillis();
+            waitTime -= cur - prev;
+            timeOut = waitTime <= 0;
         }
-        if (cnt == 0) {
-            throw new TransactionAbortedException();
+        if (timeOut) {
+            if (waitPending == tid) {
+                waitPending = null;
+            }
+            throw new TransactionAbortedException(tid.getId() + "");
         }
         if (readCount == 0 && writeCount == 0) {
             assert holdingLock.size() == 0;
             writeCount++;
             holdingLock.add(tid);
         } else if (readCount == 1 && writeCount == 0 && holdingLock.contains(tid)) {
-            readCount--;
             writeCount++;
         } else if (writeCount == 1 && holdingLock.contains(tid)) {
             assert readCount == 0 || readCount == 1;
         } else {
             assert false;
+        }
+
+        if (waitTime != WAIT_TIME) {
+            waitPending = null;
         }
     }
 //
@@ -173,7 +203,7 @@ class CustomLock {
             holdingLock.remove(tid);
             if (readCount > 0) {
                 readCount--;
-                if (readCount == 0) {
+                if (readCount == 0||readCount == 1) {
                     notifyAll();
                 }
             }
@@ -181,7 +211,16 @@ class CustomLock {
                 writeCount = 0;
                 notifyAll();
             }
+        } else {
+            assert false;
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("readCount:").append(readCount).append(" writeCount：").append(writeCount).append(" tids :").append(holdingLock);
+        return builder.toString();
     }
 }
 

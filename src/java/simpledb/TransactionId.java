@@ -2,7 +2,9 @@ package simpledb;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -31,13 +33,13 @@ public class TransactionId implements Serializable {
         return (int) myid;
     }
 
-    private List<PageId> pageIds = new ArrayList<>();
+    private Set<PageId> pageIds = new HashSet<>();
 
     public void addPageId(PageId pageId) {
         pageIds.add(pageId);
     }
 
-    public List<PageId> getPageIds() {
+    public Set<PageId> getPageIds() {
         return pageIds;
     }
 
