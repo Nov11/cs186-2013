@@ -139,8 +139,7 @@ class CustomLock {
             if (waitPending == null) {
                 waitPending = tid;
             } else if (tid.getId() > waitPending.getId()) {
-                System.err.println("there's an older txn " + waitPending.getId() + " waiting." + tid.getId()+" abort");
-                throw new TransactionAbortedException(tid.getId() + "");
+                throw new TransactionAbortedException("there's an older txn " + waitPending.getId() + " waiting." + tid.getId()+" abort");
             } else if (tid.getId() < waitPending.getId()) {
                 waitPending = tid;
                 notifyAll();
@@ -160,8 +159,7 @@ class CustomLock {
             if (waitPending == tid) {
                 waitPending = null;
             }
-            System.err.println("timeout " + tid.getId() + " abort");
-            throw new TransactionAbortedException(tid.getId() + "");
+            throw new TransactionAbortedException("timeout " + tid.getId() + " abort");
         }
         if (readCount == 0 && writeCount == 0) {
             assert holdingLock.size() == 0;
